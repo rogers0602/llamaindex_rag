@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  db:
+    # Postgres 16 + pgvector 扩展
+    image: pgvector/pgvector:pg16
+    container_name: kb_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: knowledge_base
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      # 挂载初始化脚本
+      - ./init_sql:/docker-entrypoint-initdb.d
+    # 增加健康检查，确保数据库真的启动成功
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d knowledge_base"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 测试用，生产环境删除 1. OpenLDAP 服务器
+  ldap:
+    image: osixia/openldap:1.5.0
+    container_name: kb_ldap
+    environment:
+      # 组织信息 (必须和 auth.py 里的 LDAP_BASE_DN 一致)
+      LDAP_ORGANISATION: "MyCompany"
+      LDAP_DOMAIN: "mycompany.com"
+      LDAP_ADMIN_PASSWORD: "admin"
+    ports:
+      - "389:389"   # 普通 LDAP 端口
+      - "636:636"   # SSL LDAP 端口 (可选)
+    volumes:
+      - ldap_data:/var/lib/ldap
+      - ldap_config:/etc/ldap/slapd.d
+
+  # 测试用，生产环境删除 2. phpLDAPadmin (LDAP 的 Web 管理后台)
+  phpldapadmin:
+    image: osixia/phpldapadmin:0.9.0
+    container_name: kb_phpldapadmin
+    environment:
+      PHPLDAPADMIN_LDAP_HOSTS: "ldap"
+      PHPLDAPADMIN_HTTPS: "false"
+    ports:
+      - "8081:80"  # 浏览器访问 localhost:8081
+    depends_on:
+      - ldap
+
+volumes:
+  pg_data:
+  ldap_data:
+  ldap_config:
+
