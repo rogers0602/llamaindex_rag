@@ -48,5 +48,5 @@ async def get_file_content(
         return {"type": "text", "content": content}
     except UnicodeDecodeError:
         # 二进制文件(Docx等)需要特殊处理，暂时先当下载处理
-        return FileResponse(file_path)
+        return FileResponse(file_path, filename=filename)
 
