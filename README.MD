@@ -72,7 +72,7 @@ graph TD
     %% ==== Data Layer ====
     subgraph Data_Storage["数据存储"]
         PG["PostgreSQL（pgvector）"]
-        FileSys["文件存储（Uploads）"]
+        FileSys["文件存储（files）"]
     end
 
 
@@ -97,25 +97,32 @@ graph TD
 描述了用户与系统及其外部实体的核心数据交互流程。
 
 ```mermaid
-contextDiagram
-    direction LR
-    User((普通用户))
-    Admin((管理员))
-    System[企业知识库后端]
-    DB[(PostgreSQL)]
-    Ollama[Ollama 服务]
-    LDAP[LDAP 认证源]
+graph LR
+    %% ==== Actors ====
+    User["普通用户"]
+    Admin["管理员"]
 
-    User -->> System : 1. 提问/查询
-    User -->> System : 2. 上传文档
-    Admin -->> System : 3. 用户/部门管理
-    
-    System -->> LDAP : 4. 账号验证
-    System -->> Ollama : 5. 文本向量化 (Embed)
-    System -->> DB : 6. 向量检索与存取
-    System -->> Ollama : 7. 上下文推理 (Chat)
-    
-    System -->> User : 8. 返回答案 + 引用来源
+    %% ==== System Core ====
+    System["企业知识库后端系统"]
+
+    %% ==== External Systems ====
+    DB["PostgreSQL 数据库"]
+    LLM["Ollama 模型服务"]
+    LDAP["LDAP 认证源"]
+
+
+    %% ==== User Interactions ====
+    User -->|"1. 提问 / 查询"| System
+    User -->|"2. 上传文档"| System
+    Admin -->|"3. 用户 / 部门管理"| System
+
+    %% ==== System Dependencies ====
+    System -->|"4. 账号验证"| LDAP
+    System -->|"5. 存取向量 / 元数据 / 历史记录"| DB
+    System -->|"6. 生成回答（Context）"| LLM
+
+    %% ==== Output ====
+    System -->|"7. 返回答案 + 引用来源"| User
 ```
 
 ---
