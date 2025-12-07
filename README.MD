@@ -48,41 +48,48 @@
 
 ```mermaid
 graph TD
-    Client["前端（Vue3 Web）"] -->|"REST API + Token"| Gateway["Nginx / FastAPI Router"]
+    %% ==== Client Layer ====
+    Client["前端（Vue3 / Web）"] -->|"REST API + Bearer Token"| Gateway["Nginx / FastAPI Router"]
     
-    subgraph Backend_Service
-        Gateway --> Auth["认证模块 OAuth2 LDAP"]
+
+    %% ==== Backend Core ====
+    subgraph Backend_Service["后端服务（Python）"]
+        Gateway --> Auth["认证模块（OAuth2 / LDAP）"]
         Gateway --> Manager["业务逻辑层"]
-        
-        subgraph RAG_Logic
-            Manager --> Ingestion["文档解析 PyMuPDF"]
-            Manager --> Retrieval["混合检索器"]
-            Manager --> ChatEngine["对话引擎"]
-            Retrieval --> Reranker["本地重排序模型 BGE-Reranker"]
+
+        %% ==== RAG Engine ====
+        subgraph RAG_Engine["RAG 引擎（LlamaIndex）"]
+            Manager --> Ingestion["文档解析与切片（PyMuPDF）"]
+            Manager --> Retrieval["混合检索器（向量 + 关键词）"]
+            Manager --> ChatEngine["对话引擎（Context Mode）"]
+            
+            Retrieval --> Reranker["本地重排序模型（BGE-Reranker）"]
+            Ingestion --> EmbedModel["向量化模型（BGE-M3 Small）"]
         end
     end
 
-    subgraph Data_Storage
-        PG["PostgreSQL + pgvector"]
-        FileSys["文件存储 Uploads"]
+
+    %% ==== Data Layer ====
+    subgraph Data_Storage["数据存储"]
+        PG["PostgreSQL（pgvector）"]
+        FileSys["文件存储（Uploads）"]
     end
 
-    subgraph Model_Service
-        LLM["Qwen 2.5 生成"]
-        Embed["BGE-M3 向量化"]
+
+    %% ==== External / Local Services ====
+    subgraph External_Services["外部 / 本地服务"]
+        Ollama["Ollama - Qwen2.5 模型服务"]
+        LDAP["企业 LDAP / AD Server"]
     end
 
-    subgraph Identity_Provider
-        LDAP["LDAP AD Server"]
-    end
 
+    %% ==== Cross-layer Connections ====
     Auth <--> LDAP
     Auth <--> PG
     Retrieval <--> PG
-    Ingestion --> Embed
-    Retrieval --> Embed
-    ChatEngine <--> LLM
+
     Manager --> FileSys
+    ChatEngine <--> Ollama
 ```
 
 ### 2. 0层数据流图 (DFD Level-0)
