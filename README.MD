@@ -48,33 +48,32 @@
 
 ```mermaid
 graph TD
-    Client[前端 (Vue3/Web)] -->|REST API + Bearer Token| Gateway[Nginx / FastAPI Router]
+    Client["前端（Vue3 Web）"] -->|"REST API + Token"| Gateway["Nginx / FastAPI Router"]
     
-    subgraph "Backend Service (Python Container)"
-        Gateway --> Auth[认证模块 (OAuth2/LDAP)]
-        Gateway --> Manager[业务逻辑层]
+    subgraph Backend_Service
+        Gateway --> Auth["认证模块 OAuth2 LDAP"]
+        Gateway --> Manager["业务逻辑层"]
         
-        subgraph "RAG Logic"
-            Manager --> Ingestion[文档解析 (PyMuPDF)]
-            Manager --> Retrieval[混合检索器]
-            Manager --> ChatEngine[对话引擎]
-            
-            Retrieval --> Reranker[本地重排序模型 (BGE-Reranker)]
+        subgraph RAG_Logic
+            Manager --> Ingestion["文档解析 PyMuPDF"]
+            Manager --> Retrieval["混合检索器"]
+            Manager --> ChatEngine["对话引擎"]
+            Retrieval --> Reranker["本地重排序模型 BGE-Reranker"]
         end
     end
 
-    subgraph "Data Storage"
-        PG[(PostgreSQL + pgvector)]
-        FileSys[本地文件存储 (Uploads)]
+    subgraph Data_Storage
+        PG["PostgreSQL + pgvector"]
+        FileSys["文件存储 Uploads"]
     end
 
-    subgraph "Model Service (Ollama)"
-        LLM[Qwen 2.5 (生成)]
-        Embed[BGE-M3 (向量化)]
+    subgraph Model_Service
+        LLM["Qwen 2.5 生成"]
+        Embed["BGE-M3 向量化"]
     end
 
-    subgraph "Identity Provider"
-        LDAP[企业 LDAP/AD Server]
+    subgraph Identity_Provider
+        LDAP["LDAP AD Server"]
     end
 
     Auth <--> LDAP
