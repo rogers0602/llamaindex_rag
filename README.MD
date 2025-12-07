@@ -48,19 +48,18 @@
 
 ```mermaid
 graph TD
+    %% Define CSS classes for colors if needed (optional)
+    %% classDef storage fill:#f9f,stroke:#333,stroke-width:2px;
+
     Client[前端 (Vue3/Web)] -->|REST API + Bearer Token| Gateway[Nginx / FastAPI Router]
     
-    subgraph "Backend Service (Python Container)"
-        Gateway --> Auth[认证模块 (OAuth2/LDAP)]
-        Gateway --> Manager[业务逻辑层]
-        
-        subgraph "RAG Logic"
-            Manager --> Ingestion[文档解析 (PyMuPDF)]
-            Manager --> Retrieval[混合检索器]
-            Manager --> ChatEngine[对话引擎]
-            
-            Retrieval --> Reranker[本地重排序模型 (BGE-Reranker)]
-        end
+    subgraph "Backend Service"
+        Auth[认证模块 (OAuth2/LDAP)]
+        Manager[业务逻辑层]
+        Ingestion[文档解析 (PyMuPDF)]
+        Retrieval[混合检索器]
+        ChatEngine[对话引擎]
+        Reranker[本地重排序模型 (BGE-Reranker)]
     end
 
     subgraph "Data Storage"
@@ -77,6 +76,13 @@ graph TD
         LDAP[企业 LDAP/AD Server]
     end
 
+    %% Connections
+    Gateway --> Auth
+    Gateway --> Manager
+    Manager --> Ingestion
+    Manager --> Retrieval
+    Manager --> ChatEngine
+    Retrieval --> Reranker
     Auth <--> LDAP
     Auth <--> PG
     Retrieval <--> PG
