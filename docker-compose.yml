@@ -1,3 +1,9 @@
+# Docker Compose 配置文件，用于部署知识库系统的各个组件
+# 包括 PostgreSQL 数据库、后端服务和前端服务
+# 使用前请确保已安装 Docker 和 Docker Compose
+# 主机安装好 Ollama并拉取(pull)模型bge-m3和qwen2.5:3b，并运行(run)模型 qwen2.5:3b
+# 修改本文件去除前端 enterprise-kb-vue 目录层级（修改前端 build 路径）
+# ldap相关配置应该在生产环境删除，使用公司的LDAP服务，同时修改后端backend服务的ldap配置
 version: '3.8'
 
 services:
@@ -22,6 +28,56 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+  # 前后端代码目录需同级，也就是比docker-compose.yml上一层目录
+  # |- llamaindex_rag_backend # 后端代码目录
+  # |    |- docker-compose.yml
+  # |- llamaindex_rag_front # 前端代码目录
+  # |    |- enterprise-kb-vue # 前端代码目录(github下载的前端代码没有这一层)
+  # 如果构建好了镜像后不需要修改代码了，可以去掉 build 字段，直接使用 image 字段指定镜像名
+  # 到新环境需要手动把镜像导入到新环境的镜像库
+
+  # --- 2. 后端服务 ---
+  backend:
+    image: my-company/kb-backend:v1.0  # 直接使用构建好的镜像名
+    build: ../llamaindex_rag_backend
+    container_name: kb_backend
+    restart: always
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: admin
+      DB_PASSWORD: admin_password
+      DB_NAME: knowledge_base
+      # 连接宿主机 Ollama (Linux需额外配置，Windows/Mac可用host.docker.internal)
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+      # 模型配置
+      EMBED_MODEL_NAME: bge-m3
+      EMBEDDING_DIM: 1024
+      LDAP_DOMAIN: mycompany # 生产环境填真实的配置
+      LDAP_BASE_DN: dc=mycompany,dc=com # 生产环境填真实的配置
+      LDAP_ORGANISATION: MyCompany # 生产环境填真实的配置
+      LDAP_ADMIN_PASSWORD: admin # 生产环境填真实的配置
+      LDAP_SERVER: ldap://ldap:389 # 生产环境填真实的服务器地址
+      LDAP_ADMIN_DN: cn=admin,dc=mycompany,dc=com # 生产环境填真实的配置
+    volumes:
+      # 持久化上传文件
+      - ../llamaindex_rag_backend/files:/app/files
+    depends_on:
+      db:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # --- 3. 前端服务 ---
+  frontend:
+    image: my-company/kb-frontend:v1.0  # 直接使用构建好的镜像名
+    build: ../llamaindex_rag_front/enterprise-kb-vue # 前端代码目录(github下载的前端代码要去除enterprise-kb-vue这一层)
+    container_name: kb_frontend
+    restart: always
+    ports:
+      - "80:80" # 浏览器访问 localhost
+    depends_on:
+      - backend
 
   # 测试用，生产环境删除 1. OpenLDAP 服务器
   ldap:
@@ -39,20 +95,20 @@ services:
       - ldap_data:/var/lib/ldap
       - ldap_config:/etc/ldap/slapd.d
 
-  # 测试用，生产环境删除 2. phpLDAPadmin (LDAP 的 Web 管理后台)
-  phpldapadmin:
-    image: osixia/phpldapadmin:0.9.0
-    container_name: kb_phpldapadmin
-    environment:
-      PHPLDAPADMIN_LDAP_HOSTS: "ldap"
-      PHPLDAPADMIN_HTTPS: "false"
-    ports:
-      - "8081:80"  # 浏览器访问 localhost:8081
-    depends_on:
-      - ldap
+#  # 测试用，生产环境删除 2. phpLDAPadmin (LDAP 的 Web 管理后台)
+#  phpldapadmin:
+#    image: osixia/phpldapadmin:0.9.0
+#    container_name: kb_phpldapadmin
+#    environment:
+#      PHPLDAPADMIN_LDAP_HOSTS: "ldap"
+#      PHPLDAPADMIN_HTTPS: "false"
+#    ports:
+#      - "8081:80"  # 浏览器访问 localhost:8081
+#    depends_on:
+#      - ldap
 
 volumes:
   pg_data:
-  ldap_data:
-  ldap_config:
+  ldap_data: # 测试用，生产环境删除
+  ldap_config: # 测试用，生产环境删除
 

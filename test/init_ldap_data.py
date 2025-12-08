@@ -23,24 +23,24 @@ def init_ldap():
 
         # 1. 创建两个部门 (OU - Organizational Unit)
         # 研发部
-        tech_dn = f"ou=Tech,{BASE_DN}"
+        tech_dn = f"ou=研发部,{BASE_DN}"
         conn.add(tech_dn, attributes={
             'objectClass': ['top', 'organizationalUnit'],
-            'ou': 'Tech'
+            'ou': '研发部'
         })
-        print(f"创建部门: Tech -> {conn.result['description']}")
+        print(f"创建部门: 研发部 -> {conn.result['description']}")
 
         # 市场部
-        market_dn = f"ou=Marketing,{BASE_DN}"
+        market_dn = f"ou=人力资源部,{BASE_DN}"
         conn.add(market_dn, attributes={
             'objectClass': ['top', 'organizationalUnit'],
-            'ou': 'Marketing'
+            'ou': '人力资源部'
         })
-        print(f"创建部门: Marketing -> {conn.result['description']}")
+        print(f"创建部门: 人力资源部 -> {conn.result['description']}")
 
         # 2. 创建用户 (inetOrgPerson)
         # 用户 1: zhangsan (属于 Tech)
-        zhang_dn = f"uid=zhangsan,ou=Tech,{BASE_DN}"
+        zhang_dn = f"uid=zhangsan,ou=研发部,{BASE_DN}"
         conn.add(zhang_dn, attributes={
             'objectClass': ['top', 'person', 'organizationalPerson', 'inetOrgPerson'],
             'cn': 'Zhang San',
@@ -52,7 +52,7 @@ def init_ldap():
         print(f"创建用户: zhangsan -> {conn.result['description']}")
 
         # 用户 2: lisi (属于 Marketing)
-        li_dn = f"uid=lisi,ou=Marketing,{BASE_DN}"
+        li_dn = f"uid=lisi,ou=人力资源部,{BASE_DN}"
         conn.add(li_dn, attributes={
             'objectClass': ['top', 'person', 'organizationalPerson', 'inetOrgPerson'],
             'cn': 'Li Si',

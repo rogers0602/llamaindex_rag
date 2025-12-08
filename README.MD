@@ -210,19 +210,30 @@ graph LR
     ```bash
     ollama pull qwen2.5:3b
     ollama pull bge-m3
+    ollama run qwen2.5:3b
     ```
+3.  拉取前后端代码并且放在同一个文件夹下面
+```text
+enterprise_kb/                   # 假设总目录是enterprise_kb
+├── llamaindex_rag               # 后端
+├── llamaindex_rag_front         # 前端
+```
 
 ### 1. 准备离线模型
-为了实现 Rerank 功能的离线运行，请下载 `BAAI/bge-reranker-base` 模型文件放入 `backend/models/bge-reranker-base/` 目录。该目录会被打包进 Docker 镜像。
+为了实现 Rerank 功能的离线运行，请下载 `BAAI/bge-reranker-base` 模型文件放入 `models/bge-reranker-base/` 目录。该目录会被打包进 Docker 镜像。
+具体方法参考后端models目录下的readme.txt文件
 
-### 2. 启动服务
-在项目根目录执行：
+### 2. 修改配置 docker-compose.yml 环境变量
+按 docker-compose.yml 上的说明修改文件
+
+### 3. 启动服务
+在后端项目根目录llamaindex_rag下执行：
 
 ```bash
 docker-compose up -d --build
 ```
 
-### 3. 系统初始化
+### 4. 系统初始化
 首次启动时，系统会自动执行以下初始化操作：
 1.  **数据库**：自动创建表结构（包含向量表）。
 2.  **组织架构**：创建默认公共部门 (`global`)。
@@ -256,7 +267,7 @@ environment:
 ## 📂 项目结构说明
 
 ```text
-backend/
+llamaindex_rag/
 ├── main.py                # 程序入口，负责 App 组装
 ├── rag_engine.py          # LlamaIndex 核心配置 (单例模式)
 ├── dependencies.py        # FastAPI 依赖注入 (DB, Auth)
@@ -294,39 +305,25 @@ backend/
     pip install -r requirements.txt
     ```
 2.  **准备模型**:
-    请确保 `backend/models/bge-reranker-base` 目录下有模型文件。
-3.  **启动服务**:
+    请确保 `llamaindex_rag/models/bge-reranker-base` 目录下有模型文件。
+3.  **启动ollama**:
+    宿主机安装 Ollama 并拉取模型：
+    ```bash
+    ollama pull qwen2.5:3b
+    ollama pull bge-m3
+    ollama run qwen2.5:3b
+    ```
+4.  **启动服务**:
     ```bash
     python main.py
     ```
     访问 Swagger 文档：`http://localhost:8000/docs`
 
 ---
-## 开发计划及进度：（目前处于第一阶段开发中...）
----
-
-### 🚀 第一阶段：生产级部署 (DevOps)
-
-**目标**：一条命令 `docker-compose up -d` 拉起所有服务（前端+后端+数据库+Ollama+LDAP），且开机自启。
-
-1.  **前端 Docker化**：
-    *   编写前端 `Dockerfile`。
-    *   使用 **多阶段构建**：第一阶段 `node` 环境进行 `npm run build`，第二阶段用 `nginx:alpine` 承载构建好的静态文件 (`dist` 目录)。
-    *   配置 Nginx 反向代理，把 `/api` 请求转发给后端容器。
-
-2.  **后端 Docker化**：
-    *   编写后端 `Dockerfile`。
-    *   **关键点**：把本地下载好的 `models/` 目录 COPY 进镜像，确保镜像在此处断网也能跑。
-    *   安装依赖建议使用 `requirements.txt`。
-
-3.  **编排优化 (`docker-compose.yml`)**：
-    *   将前端、后端、Postgres、Ollama 全部网络互通。
-    *   配置 `restart: always`。
-    *   配置数据卷挂载（特别是 `uploads/` 目录和 `pg_data`），防止重启丢数据。
+## 开发计划及进度：
 
 ---
-
-### 🧠 第二阶段：RAG 效果深度调优 (Data Centric AI)
+### 🧠 第一阶段：RAG 效果深度调优 (Data Centric AI)
 
 现在的 RAG 能跑通，但面对复杂问题可能还不够精准。
 
@@ -342,10 +339,14 @@ backend/
 3.  **复杂文档解析 (LlamaParse / OCR)**：
     *   **痛点**：现在的方案对于扫描件 PDF 还是无能为力。
     *   **方案**：引入 OCR 引擎（如 PaddleOCR）或接入云端解析服务（如果允许的话），处理表格和扫描件。
+    
+4.  **前端高亮增强 (Highlight)**：
+    *   **痛点**：高亮位置不对，特别是对于非txt文档。
+    *   **方案**：增强前端高亮定位文本算法，结合第1条改进。
 
 ---
 
-### 📈 第三阶段：运营与反馈 (Product Features)
+### 📈 第二阶段：运营与反馈 (Product Features)
 
 让系统“活”起来，不仅能查，还能进化。
 

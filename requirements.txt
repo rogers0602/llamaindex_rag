@@ -19,5 +19,5 @@ sentence-transformers
 unstructured
 pydantic
 bcrypt
-
-
+ldap3
+docx2txt

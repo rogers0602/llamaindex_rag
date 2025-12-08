@@ -11,10 +11,7 @@ CREATE TABLE IF NOT EXISTS workspaces (
 
 -- 初始化预设数据
 INSERT INTO workspaces (id, name) VALUES
-('global', '公共知识库'),
-('d1968b24-1eee-47b6-b2e0-0f4d7de931f9', '研发部'),
-('1e9047f5-e62d-4d4e-a3aa-cb42f450e052', '财务部'),
-('d7056149-d38a-49e1-bcbf-4c231542afdb', '人力资源部')
+('global', '公共知识库')
 ON CONFLICT (id) DO NOTHING;
 
 -- 用户表 (Users)
