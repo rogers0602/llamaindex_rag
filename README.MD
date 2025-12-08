@@ -296,7 +296,7 @@ llamaindex_rag/
 
 ## 🧪 开发与调试
 
-如果需要在本地 (非 Docker) 环境开发：
+如果需要在本地环境开发：
 
 1.  **准备环境**:
     ```bash
@@ -304,16 +304,30 @@ llamaindex_rag/
     conda activate rag_backend
     pip install -r requirements.txt
     ```
-2.  **准备模型**:
-    请确保 `llamaindex_rag/models/bge-reranker-base` 目录下有模型文件。
-3.  **启动ollama**:
+2.  **数据库准备**:
+    安装 PostgreSQL(16) 并创建数据库，确保 `pgvector` 扩展已启用。
+    执行初始化脚本：
+    ```bash
+    psql -h localhost -U your_user -d your_db -f init_sql/init.sql
+    ```
+3. **启动 LDAP 服务（可选，如果公司环境有可以用公司环境的ldap服务）**:
+    如果需要测试 LDAP 功能，可以使用 Docker 启动一个测试用的 LDAP 服务器：
+    ```bash
+    docker run -d -p 389:389 --name test-ldap osixia/openldap:1.5.0
+    ```
+    并使用 `test/init_ldap_data.py` 脚本初始化测试数据。
+4.  **修改环境变量**:
+    按照上述数据库和ldap环境修改 `.env` 文件
+5.  **准备模型**:
+    请确保 `models/bge-reranker-base` 目录下有模型文件。
+6.  **启动ollama**:
     宿主机安装 Ollama 并拉取模型：
     ```bash
     ollama pull qwen2.5:3b
     ollama pull bge-m3
     ollama run qwen2.5:3b
     ```
-4.  **启动服务**:
+7.  **启动服务**:
     ```bash
     python main.py
     ```
